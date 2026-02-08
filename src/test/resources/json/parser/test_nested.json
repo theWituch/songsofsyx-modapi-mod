@@ -1,0 +1,15 @@
+{
+  user: "Piotr",
+  profile: {
+    age: 35,
+    country: "Poland"
+  },
+  settings: {
+    theme: "dark",
+    notifications: true,
+    preferences: {
+      language: "pl",
+      timezone: "UTC+1"
+    }
+  }
+}

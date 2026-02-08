@@ -1,0 +1,11 @@
+{
+  stringValue: "Hello World",
+  intValue: 42,
+  doubleValue: 3.14159,
+  boolTrue: true,
+  boolFalse: false,
+  nullValue: null,
+  negativeInt: -100,
+  negativeDouble: -2.5,
+  scientificNotation: 1.5e10
+}

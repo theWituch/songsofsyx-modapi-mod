@@ -1,0 +1,25 @@
+{
+  company: "Tech Corp",
+  employees: [
+    {
+      name: "John Doe",
+      position: "Developer",
+      salary: 5000.50
+    },
+    {
+      name: "Jane Smith",
+      position: "Manager",
+      salary: 7500.75
+    }
+  ],
+  departments: {
+    IT: {
+      budget: 100000,
+      projects: ["Project A", "Project B"]
+    },
+    HR: {
+      budget: 50000,
+      staff: 5
+    }
+  }
+}

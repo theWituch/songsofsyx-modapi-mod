@@ -1,0 +1,6 @@
+{
+    name:     "Test User"  ,
+		age:	28	,
+  city:   "Poznań"   ,
+  	country:		"Poland"
+}
