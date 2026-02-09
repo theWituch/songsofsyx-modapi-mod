@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.songsofsyx</groupId>
+    <groupId>com.songsofsyx.mod</groupId>
     <artifactId>songsofsyx-modapi-mod</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 
     <name>Mod API</name>
     <description>The mod adds several functionalities to make modding easier.</description>
