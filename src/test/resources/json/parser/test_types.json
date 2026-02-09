@@ -1,4 +1,5 @@
 {
+  ** Types test
   stringValue: "Hello World",
   intValue: 42,
   doubleValue: 3.14159,

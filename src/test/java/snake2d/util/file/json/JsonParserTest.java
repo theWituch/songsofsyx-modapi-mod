@@ -155,7 +155,7 @@ public class JsonParserTest {
             Exception ex = assertThrows(JsonParseException.class, () -> {
                 parser.parse(new TestFile("json/parser/test_invalid_missing_bracket.json"));
             });
-            assertEquals("Expected '}' at the end of the file (line 4, column 1)", ex.getMessage());
+            assertEquals("Expected '}' at the end of the file (line 6, column 1)", ex.getMessage());
         }
 
         @Test
@@ -164,7 +164,7 @@ public class JsonParserTest {
             Exception ex = assertThrows(JsonParseException.class, () -> {
                 parser.parse(new TestFile("json/parser/test_invalid_missing_colon.json"));
             });
-            assertEquals("Expected ':' after key 'name' (line 2, column 8)", ex.getMessage());
+            assertEquals("Expected ':' after key 'name' (line 3, column 8)", ex.getMessage());
         }
     }
 
@@ -240,6 +240,220 @@ public class JsonParserTest {
             List<JsonValue> projects = itDept.get("projects").asList();
             assertEquals(2, projects.size());
             assertEquals("Project A", projects.get(0).asString());
+        }
+    }
+
+    @Nested
+    @DisplayName("JsonParser - Comments Tests")
+    class CommentsTests {
+
+        @Test
+        @DisplayName("Should skip comment at the beginning of file")
+        void shouldSkipCommentAtBeginning() throws JsonParseException {
+            String json = """
+                ** This is a comment
+                {
+                    key: "value"
+                }
+                """;
+            Json result = parser.parse(json);
+            assertEquals("value", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip inline comment after value")
+        void shouldSkipInlineComment() throws JsonParseException {
+            String json = """
+                {
+                    key: "value" ** This is a comment
+                }
+                """;
+            Json result = parser.parse(json);
+            assertEquals("value", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip comment after key-value pair")
+        void shouldSkipCommentAfterKeyValue() throws JsonParseException {
+            String json = """
+                {
+                    key: "value", ** Comment after value
+                    key2: "value2"
+                }
+                """;
+            Json result = parser.parse(json);
+
+            assertEquals("value", result.get("key").asString());
+            assertEquals("value2", result.get("key2").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip multiple comments")
+        void shouldSkipMultipleComments() throws JsonParseException {
+            String json = """
+                ** Comment 1
+                {
+                    ** Comment 2
+                    key1: "value1", ** Comment 3
+                    key2: "value2" ** Comment 4
+                    ** Comment 5
+                }
+                ** Comment 6
+                """;
+            Json result = parser.parse(json);
+
+            assertEquals("value1", result.get("key1").asString());
+            assertEquals("value2", result.get("key2").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip comments in nested objects")
+        void shouldSkipCommentsInNestedObjects() throws JsonParseException {
+            String json = """
+                {
+                    ** Nested object
+                    user: {
+                        ** User name
+                        name: "John", ** First name
+                        age: 30 ** Years
+                    }
+                }
+                """;
+            Json result = parser.parse(json);
+            Json user = result.get("user").asJson();
+            assertEquals("John", user.get("name").asString());
+            assertEquals(30, user.get("age").asInteger());
+        }
+
+        @Test
+        @DisplayName("Should skip comments in arrays")
+        void shouldSkipCommentsInArrays() throws JsonParseException {
+            String json = """
+                {
+                    ** Array of numbers
+                    numbers: [
+                        1, ** First
+                        2, ** Second
+                        3 ** Third
+                    ]
+                }
+                """;
+            Json result = parser.parse(json);
+            List<JsonValue> numbers = result.get("numbers").asList();
+            assertEquals(3, numbers.size());
+            assertEquals(1, numbers.get(0).asInteger());
+        }
+
+        @Test
+        @DisplayName("Should not treat single asterisk as comment")
+        void shouldNotTreatSingleAsteriskAsComment() throws JsonParseException {
+            String json = "{ key: \"value*text\" }";
+            Json result = parser.parse(json);
+            assertEquals("value*text", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should handle asterisks inside string values")
+        void shouldHandleAsterisksInStrings() throws JsonParseException {
+            String json = "{ key: \"text ** with asterisks\" }";
+            Json result = parser.parse(json);
+            assertEquals("text ** with asterisks", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip comment without root brackets")
+        void shouldSkipCommentWithoutBrackets() throws JsonParseException {
+            String json = """
+                ** Configuration
+                host: "localhost", ** Server
+                port: 8080 ** Port
+                """;
+            Json result = parser.parse(json);
+            assertEquals("localhost", result.get("host").asString());
+            assertEquals(8080, result.get("port").asInteger());
+        }
+
+        @Test
+        @DisplayName("Should skip empty comment")
+        void shouldSkipEmptyComment() throws JsonParseException {
+            String json = "{ key: \"value\" ** }";
+            Json result = parser.parse(json);
+            assertEquals("value", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should skip comment with special characters")
+        void shouldSkipCommentWithSpecialChars() throws JsonParseException {
+            String json = "{ key: \"value\" ** !@#$%^&*(){}[]<>?/\\| }";
+            Json result = parser.parse(json);
+            assertEquals("value", result.get("key").asString());
+        }
+
+        @Test
+        @DisplayName("Should detect a missing closing bracket")
+        void shouldDetectMissingClosingBracket() {
+            String json = "{ key: \"value\" ** !@#$%^&*(){}[]<>?/\\|";
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(json);
+            });
+            assertEquals("Expected '}' at the end of the file (line 1, column 39)", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should detect a missing colon")
+        void shouldDetectMissingColon() {
+            String json = "{ key \"value\" ** !@#$%^&*(){}[]<>?/\\|";
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(json);
+            });
+            assertEquals("Expected ':' after key 'key' (line 1, column 7)", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should handle configuration file with documentation comments")
+        void shouldHandleConfigWithDocComments() throws JsonParseException {
+            String json = """
+                ** Application Configuration
+                ** Generated: 2026-02-03
+                {
+                    ** Server settings
+                    server: {
+                        host: "0.0.0.0", ** Bind to all interfaces
+                        port: 8080 ** HTTP port
+                        enabled: true ** Should start?
+                    },
+                    
+                    ** Database configuration
+                    database: {
+                        host: "localhost", ** DB server
+                        port: 5432 ** PostgreSQL default
+                    }
+                }
+                """;
+            Json result = parser.parse(json);
+
+            Json server = result.get("server").asJson();
+            assertEquals("0.0.0.0", server.get("host").asString());
+            assertEquals(8080, server.get("port").asInteger());
+            assertEquals(true, server.get("enabled").asBoolean());
+
+            Json database = result.get("database").asJson();
+            assertEquals("localhost", database.get("host").asString());
+            assertEquals(5432, database.get("port").asInteger());
+        }
+
+        @Test
+        @DisplayName("Should skip comments around null values")
+        void shouldSkipCommentsAroundNull() throws JsonParseException {
+            String json = """
+                {
+                    ** Null value
+                    empty: null ** This is null
+                }
+                """;
+            Json result = parser.parse(json);
+
+            assertTrue(result.get("empty").isNull());
         }
     }
 

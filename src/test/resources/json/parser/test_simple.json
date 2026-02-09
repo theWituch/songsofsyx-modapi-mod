@@ -1,4 +1,5 @@
 {
+  ** Simple tests
   name: "Jan Kowalski",
   age: 30,
   city: "Warszawa"

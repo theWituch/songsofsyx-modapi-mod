@@ -1,4 +1,5 @@
 {
+  ** Nested structures tests
   user: "Piotr",
   profile: {
     age: 35,

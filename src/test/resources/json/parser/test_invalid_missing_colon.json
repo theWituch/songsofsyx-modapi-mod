@@ -1,3 +1,4 @@
 {
-  name "Invalid"
+  ** Missing colon test
+  name "Invalid" ** in this line we have no colon after key
 }

@@ -405,15 +405,47 @@ public class JsonParser {
     }
 
     /**
-     * Skips whitespace characters.
+     * Skips whitespace characters and comments.
+     * Comments start with ** and continue until the end of the line.
      */
     private void skipWhitespace() {
         while (position < content.length()) {
             char c = content.charAt(position);
+
+            // Check for comment start (**)
+            if (c == '*' && position + 1 < content.length() && content.charAt(position + 1) == '*') {
+                parseComment();
+                continue;
+            }
+
             if (Character.isWhitespace(c)) {
                 consume();
             } else {
                 break;
+            }
+        }
+    }
+
+    /**
+     * Skips a comment starting from ** until the end of the line.
+     */
+    private void parseComment() {
+        // Consume the **
+        consume();
+        consume();
+
+        // Skip everything until newline or end of content
+        while (position < content.length()) {
+            char c = peek();
+            if (c == '\n') {
+                consume(); // Consume the newline
+                break;
+            } else if (c == '}' && position + 1 == content.length()) {
+                break; // One-line json
+            } else if (c == '\0') {
+                break; // End of content
+            } else {
+                consume();
             }
         }
     }
@@ -433,7 +465,7 @@ public class JsonParser {
      */
     private char consume() {
         if (position >= content.length()) {
-            return '\0';
+            throw new IllegalStateException("Cannot be consumed when content end has reached");
         }
         char c = content.charAt(position);
         position++;

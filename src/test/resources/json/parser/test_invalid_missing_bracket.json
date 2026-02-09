@@ -1,3 +1,5 @@
 {
+  ** Missing bracket test
   name: "Invalid",
   age: 30
+**  here we have missing bracket :(
