@@ -19,7 +19,7 @@ If this concept is widely adopted in the core game, it will be possible to pass 
 
 ## Step 1 - install Mod API mod in game
 
-This works like any other mod.
+This works like any other mod. Download latest from [releases](https://github.com/theWituch/songsofsyx-modapi-mod/releases).
 
 ## Step 2 - patch game assets
 
