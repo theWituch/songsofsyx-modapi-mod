@@ -1,5 +1,6 @@
 package snake2d.util.file.json;
 
+import org.assertj.core.api.AbstractObjectAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,8 @@ import test.utils.TestFile;
 import java.io.IOException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("JsonParser Tests")
@@ -81,6 +84,15 @@ public class JsonParserTest {
 
             assertEquals(123, json.get("multi word key").asInteger());
         }
+
+        @Test
+        @DisplayName("Should parse JSON with special characters")
+        void shouldParseJsonWithSpecialCharacters() throws JsonParseException  {
+            String jsonString = "\"¤key\": \"value ¤\"";
+            Json json = parser.parse(jsonString);
+
+            assertEquals("value ¤", json.get("¤key").asString());
+        }
     }
 
     @Nested
@@ -150,6 +162,15 @@ public class JsonParserTest {
         }
 
         @Test
+        @DisplayName("Should detect a missing key")
+        void shouldDetectMissingKey() {
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse("{ -1 }");
+            });
+            assertEquals("Expected key (line 1, column 3)", ex.getCause().getMessage());
+        }
+
+        @Test
         @DisplayName("Should detect a missing closing bracket")
         void shouldDetectMissingClosingBracket() {
             Exception ex = assertThrows(JsonParseException.class, () -> {
@@ -159,12 +180,30 @@ public class JsonParserTest {
         }
 
         @Test
+        @DisplayName("Should detect a missing closing bracket")
+        void shouldDetectMissingClosingBracketInArray() {
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(new TestFile("json/parser/test_invalid_array_missing_bracket.json"));
+            });
+            assertEquals("Expected closing ']' before '}' (line 4, column 1)", ex.getCause().getMessage());
+        }
+
+        @Test
         @DisplayName("Should detect a missing colon")
         void shouldDetectMissingColon() {
             Exception ex = assertThrows(JsonParseException.class, () -> {
                 parser.parse(new TestFile("json/parser/test_invalid_missing_colon.json"));
             });
             assertEquals("Expected ':' after key 'name' (line 3, column 8)", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should detect a missing colon")
+        void shouldDetectMissingColonInArray() {
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(new TestFile("json/parser/test_invalid_array_missing_colon.json"));
+            });
+            assertEquals("Expected ',' between array elements (line 3, column 22)", ex.getCause().getMessage());
         }
     }
 
@@ -240,6 +279,147 @@ public class JsonParserTest {
             List<JsonValue> projects = itDept.get("projects").asList();
             assertEquals(2, projects.size());
             assertEquals("Project A", projects.get(0).asString());
+        }
+    }
+
+    @Nested
+    @DisplayName("JsonParser - Array Structures Tests")
+    class ArrayStructuresTests {
+
+        @Test
+        @DisplayName("Should parse array with mixed structures")
+        void shouldParseMixedStructures() throws JsonParseException {
+            String json = """
+                {
+                    items: [
+                        id: 1,
+                        name: "Item 1",
+                        config: {
+                            enabled: true
+                        },
+                        42,
+                        "regular string"
+                    ]
+                }
+                """;
+            Json result = parser.parse(json);
+
+            JsonValue[] items = result.get("items").asArray();
+            assertEquals(5, items.length);
+            assertEquals(1, items[0].asInteger());
+            assertEquals("Item 1", items[1].asString());
+            assertTrue(items[2].asJson().get("enabled").asBoolean());
+            assertEquals(42, items[3].asInteger());
+            assertEquals("regular string", items[4].asString());
+        }
+
+        @Test
+        @DisplayName("Should parse nested arrays with structures")
+        void shouldParseNestedArraysWithStructures() throws JsonParseException {
+            String json = """
+                {
+                    outer: [
+                        inner: [
+                            a: 1,
+                            b: 2
+                        ]
+                    ]
+                }
+                """;
+            Json result = parser.parse(json);
+
+            JsonValue[] outer = result.get("outer").asArray();
+            JsonValue[] inner = outer[0].asArray();
+            assertEquals(2, inner.length);
+            assertEquals(1, inner[0].asInteger());
+            assertEquals(2, inner[1].asInteger());
+        }
+
+        @Test
+        @DisplayName("Should parse array structures with booleans and nulls")
+        void shouldParseArrayStructuresWithVariousTypes() throws JsonParseException {
+            String json = """
+                {
+                    data: [
+                        flag: true,
+                        empty: null,
+                        count: 42,
+                        price: 19.99
+                    ]
+                }
+                """;
+            Json result = parser.parse(json);
+
+            JsonValue[] data = result.get("data").asArray();
+            assertEquals(4, data.length);
+            assertTrue(data[0].asBoolean());
+            assertTrue(data[1].isNull());
+            assertEquals(42, data[2].asInteger());
+            assertEquals(19.99, data[3].asDouble(), 0.001);
+        }
+
+        @Test
+        @DisplayName("Should parse array with structures")
+        void shouldParseArrayWithKeyValuePairs() throws IOException, JsonParseException {
+            Json result = parser.parse(new TestFile("json/parser/test_arrays_structures.json"));
+
+            JsonValue[] ARRAY = result.get("ARRAY").asArray();
+            assertEquals(4, ARRAY.length);
+
+            assertThatJsonArrayValueKeyString(ARRAY[0]).isEqualTo("JSON");
+            Json JSON = ARRAY[0].asJson();
+            assertEquals("value", JSON.get("key").asString());
+            assertEquals("multi value", JSON.get("multi word key").asString());
+            Json miniJson = JSON.get("miniJson").asJson();
+            assertEquals(true, miniJson.get("mini").asBoolean());
+
+            assertThatJsonArrayValueKeyString(ARRAY[1]).isEqualTo("NAME");
+            String NAME = ARRAY[1].asString();
+            assertEquals("test", NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[2]).isEqualTo("SECOND NAME");
+            String SECOND_NAME = ARRAY[2].asString();
+            assertEquals("bond", SECOND_NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[3]).isEqualTo("AGE");
+            Integer AGE = ARRAY[3].asInteger();
+            assertEquals(123, AGE);
+        }
+
+        @Test
+        @DisplayName("Should detect a missing comma for arrays with key pairs")
+        void shouldDetectMissingCommaForKeyPairs() {
+            String json = """
+                {
+                    array: [
+                        a: 1
+                        b: 2
+                    ]
+                }
+                """;
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(json);
+            });
+            assertEquals("Expected ',' between array elements (line 4, column 9)", ex.getCause().getMessage());
+        }
+
+        @Test
+        @DisplayName("Should detect a missing closing bracket for nested arrays with structures")
+        void shouldDetectMissingClosingBracketForNestedArrays() {
+            String json = """
+                {
+                    outer: [
+                        inner: [
+                            a: 1,
+                            b: 2
+                        ]
+                    ** Missing closing bracket here
+                }
+                """;
+            Exception ex = assertThrows(JsonParseException.class, () -> {
+                parser.parse(json);
+            });
+            assertEquals("Expected closing ']' before '}' (line 8, column 1)", ex.getCause().getMessage());
         }
     }
 
@@ -520,5 +700,12 @@ public class JsonParserTest {
             Json RoomEmploymentIns = json.get("settlement.room.main.employment.RoomEmploymentIns").asJson();
             assertEquals("Industry workers can fetch the input for the industry without problems if the distance is short. If long, then productivity will suffer.", RoomEmploymentIns.get("¤¤ProximityInputD").asString());
         }
+    }
+
+    static AbstractObjectAssert<?, String> assertThatJsonArrayValueKeyString(JsonValue value) {
+        return assertThat(value)
+                .asInstanceOf(type(JsonValue.JsonArrayValue.class))
+                .extracting(JsonValue.JsonArrayValue::getJsonKey)
+                .extracting(JsonKey::toString);
     }
 }

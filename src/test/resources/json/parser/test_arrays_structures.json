@@ -1,0 +1,15 @@
+{
+  ** Arrays with structures, key pairs
+  ARRAY: [
+    JSON: {
+      key: "value",
+      "multi word key": "multi value",
+      miniJson: {
+        mini: true
+      }
+    },
+    NAME: "test", ** Arrays does not have keys, so only string value will be stored
+    "SECOND NAME": "bond",
+    AGE: 123
+  ],
+}

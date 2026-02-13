@@ -6,7 +6,7 @@
 
     <groupId>com.songsofsyx.mod</groupId>
     <artifactId>songsofsyx-modapi-mod</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
 
     <name>Mod API</name>
     <description>The mod adds several functionalities to make modding easier.</description>

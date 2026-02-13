@@ -1,0 +1,4 @@
+{
+  ** Missing colon test
+  arrray: ["Invalid" "array"] ** in this line we have no colon after first value
+}

@@ -122,7 +122,7 @@ public class JsonParser {
 
             // Expect colon
             if (peek() != ':') {
-                throw new JsonParseException("Expected ':' after key '" + key.getKey() + "'", line, column);
+                throw new JsonParseException("Expected ':' after key '" + key + "'", line, column);
             }
             consume(); // Consume ':'
             skipWhitespace();
@@ -165,7 +165,7 @@ public class JsonParser {
             if (c == '"') {
                 // Quoted key
                 return new JsonKey(parseStringLiteral());
-            } else if (Character.isDefined(c)) {
+            } else if (Character.isLetterOrDigit(c)) {
                 // Unquoted key
                 StringBuilder key = new StringBuilder();
                 while (position < content.length()) {
@@ -284,7 +284,7 @@ public class JsonParser {
 
         while (position < content.length()) {
             skipWhitespace();
-            array.add(parseValue());
+            array.add(parseArrayElement());
             skipWhitespace();
 
             char c = peek();
@@ -299,12 +299,57 @@ public class JsonParser {
             } else if (c == ']') {
                 consume();
                 return array;
+            } else if (c == '}') {
+                throw new JsonParseException("Expected closing ']' before '}'", line, column);
             } else {
-                // Missing comma is also acceptable - continue
+                throw new JsonParseException("Expected ',' between array elements", line, column);
             }
         }
 
         throw new JsonParseException("Unterminated array", line, column);
+    }
+
+    /**
+     * Parses an array element.
+     * Recognizes KEY: VALUE pattern and returns only the value.
+     */
+    private JsonValue parseArrayElement() throws JsonParseException {
+        int savedPosition = position;
+        int savedLine = line;
+        int savedColumn = column;
+
+        skipWhitespace();
+        char c = peek();
+
+        // Check if it looks like a KEY: value pattern
+        if (c == '"' || Character.isLetterOrDigit(c) || c == '_') {
+            try {
+                // Try to parse as key
+                JsonKey key = parseKey();
+                skipWhitespace();
+
+                if (peek() == ':') {
+                    // It's a KEY: value structure - consume colon and return only the value
+                    consume(); // Consume ':'
+                    skipWhitespace();
+                    return new JsonValue.JsonArrayValue(key, parseValue());
+                } else {
+                    // Not a KEY: value, restore position and parse as regular value
+                    position = savedPosition;
+                    line = savedLine;
+                    column = savedColumn;
+                    return new JsonValue.JsonArrayValue(key, parseValue());
+                }
+            } catch (Exception e) {
+                position = savedPosition;
+                line = savedLine;
+                column = savedColumn;
+                return parseValue();
+            }
+        } else {
+            // Doesn't look like KEY: value, parse as regular value
+            return parseValue();
+        }
     }
 
     /**
@@ -479,6 +524,5 @@ public class JsonParser {
 
         return c;
     }
-
 
 }

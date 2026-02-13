@@ -152,4 +152,17 @@ public class JsonValue {
     public int hashCode() {
         return Objects.hash(value, type);
     }
+
+    static class JsonArrayValue extends JsonValue {
+        private final JsonKey key;
+
+        public JsonArrayValue(JsonKey key, JsonValue value) {
+            super(value.getValue());
+            this.key = key;
+        }
+
+        public JsonKey getJsonKey() {
+            return key;
+        }
+    }
 }

@@ -1,0 +1,4 @@
+{
+  ** Missing bracket in array test
+  array: ["Invalid", "array" **  here we have missing bracket :(
+}
