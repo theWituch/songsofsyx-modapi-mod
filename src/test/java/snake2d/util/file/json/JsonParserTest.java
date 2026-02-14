@@ -86,12 +86,39 @@ public class JsonParserTest {
         }
 
         @Test
-        @DisplayName("Should parse JSON with special characters")
-        void shouldParseJsonWithSpecialCharacters() throws JsonParseException  {
-            String jsonString = "\"¤key\": \"value ¤\"";
+        @DisplayName("Should parse JSON with sd characters")
+        void shouldParseJsonWithUnderscoreOpenedKey() throws JsonParseException  {
+            String jsonString = "_key: \"value ¤\"";
+            Json json = parser.parse(jsonString);
+
+            assertEquals("value ¤", json.get("_key").asString());
+        }
+
+        @Test
+        @DisplayName("Should parse JSON with underscore opened multi word key")
+        void shouldParseJsonWithMultiWordUnderscoreOpenedKey() throws JsonParseException  {
+            String jsonString = "\"_multi word key\": \"value ¤\"";
+            Json json = parser.parse(jsonString);
+
+            assertEquals("value ¤", json.get("_multi word key").asString());
+        }
+
+        @Test
+        @DisplayName("Should parse JSON with currency sign opened key")
+        void shouldParseJsonWithCurrencySignOpenedKey() throws JsonParseException  {
+            String jsonString = "¤key: \"value ¤\"";
             Json json = parser.parse(jsonString);
 
             assertEquals("value ¤", json.get("¤key").asString());
+        }
+
+        @Test
+        @DisplayName("Should parse JSON with currency sign opened multi word key")
+        void shouldParseJsonWithMultiWordCurrencySignOpenedKey() throws JsonParseException  {
+            String jsonString = "\"¤multi word key\": \"value ¤\"";
+            Json json = parser.parse(jsonString);
+
+            assertEquals("value ¤", json.get("¤multi word key").asString());
         }
     }
 
@@ -336,6 +363,69 @@ public class JsonParserTest {
         }
 
         @Test
+        @DisplayName("Should value keys be accessible arrays with structures")
+        void shouldKeysBeAccessibleForArraysWithStructures() throws JsonParseException {
+            String json = "array: [ key_name: 1, \"value\" ]";
+            Json result = parser.parse(json);
+
+            JsonValue[] array = result.get("array").asArray();
+            assertEquals(2, array.length);
+
+            assertThat(array[0]).isInstanceOf(JsonValue.JsonArrayValue.class);
+            JsonValue.JsonArrayValue arrayValue = (JsonValue.JsonArrayValue) array[0];
+            assertEquals("key_name", arrayValue.getJsonKey().getKey());
+
+            assertThat(array[1]).isNotInstanceOf(JsonValue.JsonArrayValue.class);
+            assertEquals("value",  array[1].asString());
+        }
+
+        @Test
+        @DisplayName("Should parse arrays with special characters")
+        void shouldParse() throws IOException, JsonParseException {
+            Json result = parser.parse(new TestFile("json/parser/test_arrays_special_characters.json"));
+
+            JsonValue[] first = result.get("_first").asArray();
+            assertEquals(5, first.length);
+            assertEquals(1, first[0].asInteger());
+            assertEquals(3, first[2].asInteger());
+
+            JsonValue[] second = result.get("_second_array").asArray();
+            assertEquals(3, second.length);
+            assertEquals("fo_o", second[0].asString());
+            assertEquals("ba.r", second[1].asString());
+            assertEquals("¤ value", second[2].asString());
+
+            JsonValue[] third = result.get("_some_third.array").asArray();
+            assertEquals(2, third.length);
+            assertEquals(true, third[0].asBoolean());
+            assertEquals(false, third[1].asBoolean());
+
+            assertEquals("¤specialvalue", result.get("¤special_key").asString());
+
+            JsonValue[] array = result.get("_array").asArray();
+            assertEquals(4, array.length);
+            assertThatJsonArrayValueKeyString(array[0]).isEqualTo("_a");
+            assertEquals(1, array[0].asInteger());
+            assertThatJsonArrayValueKeyString(array[1]).isEqualTo("_b");
+            assertEquals(2, array[1].asInteger());
+            assertThatJsonArrayValueKeyString(array[2]).isEqualTo("¤_c");
+            assertEquals(3, array[2].asInteger());
+            assertThatJsonArrayValueKeyString(array[3]).isEqualTo("c_¤");
+            assertEquals(4, array[3].asInteger());
+
+            JsonValue[] outer = result.get("_outer").asArray();
+            assertThatJsonArrayValueKeyString(outer[0]).isEqualTo("_inn.er_");
+            JsonValue[] inner = outer[0].asArray();
+            assertEquals(3, inner.length);
+            assertThatJsonArrayValueKeyString(inner[0]).isEqualTo("_a");
+            assertEquals(1, inner[0].asInteger());
+            assertThatJsonArrayValueKeyString(inner[1]).isEqualTo("_b_key");
+            assertEquals(2, inner[1].asInteger());
+            assertThatJsonArrayValueKeyString(inner[2]).isEqualTo("¤c");
+            assertEquals(3, inner[2].asInteger());
+        }
+
+        @Test
         @DisplayName("Should parse array structures with booleans and nulls")
         void shouldParseArrayStructuresWithVariousTypes() throws JsonParseException {
             String json = """
@@ -564,7 +654,7 @@ public class JsonParserTest {
         @Test
         @DisplayName("Should skip comment with special characters")
         void shouldSkipCommentWithSpecialChars() throws JsonParseException {
-            String json = "{ key: \"value\" ** !@#$%^&*(){}[]<>?/\\| }";
+            String json = "{ key: \"value\" ** ¤!@#$%^&*(){}[]<>?/\\| }";
             Json result = parser.parse(json);
             assertEquals("value", result.get("key").asString());
         }

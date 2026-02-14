@@ -1,0 +1,21 @@
+{
+  ** ¤¤ Arrays with special characters in keys, values, and comments ¤¤
+  _first: [ 1, 2, 3, 4, 5 ],
+  _second_array: [ "fo_o", "ba.r", "¤ value" ],
+  _some_third.array: [ true, false ],
+  ¤special_key: "¤specialvalue",
+  _array: [ ** ¤ array ¤
+    _a: 1,
+    _b: 2,
+    ¤_c: 3,
+    c_¤: 4
+  ],
+  ** ¤¤ Nested arrays works too ¤¤
+  _outer: [
+    _inn.er_: [
+      _a: 1,
+      _b_key: 2,
+      ¤c: 3
+    ]
+  ]
+}

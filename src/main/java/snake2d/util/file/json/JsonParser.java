@@ -165,12 +165,12 @@ public class JsonParser {
             if (c == '"') {
                 // Quoted key
                 return new JsonKey(parseStringLiteral());
-            } else if (Character.isLetterOrDigit(c)) {
+            } else if (Character.isLetterOrDigit(c) || c == '_' || c == '¤') { // Allow keys to start with underscore or '¤'
                 // Unquoted key
                 StringBuilder key = new StringBuilder();
                 while (position < content.length()) {
                     c = peek();
-                    if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.') {
+                    if (Character.isLetterOrDigit(c) || c == '_' || c == '¤' || c == '-' || c == '.') { // Allow keys to have special characters
                         key.append(consume());
                     } else {
                         break;
@@ -322,7 +322,7 @@ public class JsonParser {
         char c = peek();
 
         // Check if it looks like a KEY: value pattern
-        if (c == '"' || Character.isLetterOrDigit(c) || c == '_') {
+        if (c == '"' || Character.isLetterOrDigit(c) || c == '_' || c == '¤') {
             try {
                 // Try to parse as key
                 JsonKey key = parseKey();
@@ -338,7 +338,7 @@ public class JsonParser {
                     position = savedPosition;
                     line = savedLine;
                     column = savedColumn;
-                    return new JsonValue.JsonArrayValue(key, parseValue());
+                    return parseValue();
                 }
             } catch (Exception e) {
                 position = savedPosition;
