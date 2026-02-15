@@ -1,6 +1,6 @@
 package snake2d.util.file.json;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,7 +14,7 @@ public class Json {
     private Map<JsonKey, JsonValue> data;
 
     public Json() {
-        this.data = new HashMap<>();
+        this.data = new LinkedHashMap<>();
     }
 
     /**

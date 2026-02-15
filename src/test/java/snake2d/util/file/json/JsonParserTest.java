@@ -86,6 +86,23 @@ public class JsonParserTest {
         }
 
         @Test
+        @DisplayName("Should preserve key order for parsed JSON")
+        void shouldPreserveKeyOrderForParsedJson() throws JsonParseException  {
+            String jsonString = "key1: 1, key2: 2, key3: 3, c: 4, a: 5, b: 6";
+            Json json = parser.parse(jsonString);
+
+            JsonKey[] keys = new JsonKey[json.keySet().size()];
+            json.keySet().toArray(keys);
+
+            assertEquals("key1", keys[0].getKey());
+            assertEquals("key2", keys[1].getKey());
+            assertEquals("key3", keys[2].getKey());
+            assertEquals("c", keys[3].getKey());
+            assertEquals("a", keys[4].getKey());
+            assertEquals("b", keys[5].getKey());
+        }
+
+        @Test
         @DisplayName("Should parse JSON with sd characters")
         void shouldParseJsonWithUnderscoreOpenedKey() throws JsonParseException  {
             String jsonString = "_key: \"value ¤\"";
