@@ -261,7 +261,7 @@ public class JsonMergerTest {
             level1_2.put("level2", new JsonValue(level2_2));
             json2.put("level1", new JsonValue(level1_2));
 
-            Json result = JsonMerger.deepMerge(json1, json2);
+            Json result = JsonMerger.merge(json1, json2);
 
             Json level1 = result.get("level1").asJson();
             Json level2 = level1.get("level2").asJson();

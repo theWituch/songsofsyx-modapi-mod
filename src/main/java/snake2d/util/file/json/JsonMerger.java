@@ -50,18 +50,6 @@ public class JsonMerger {
     }
 
     /**
-     * Merges two Json objects.
-     * Keys from the second object overwrite keys from the first one.
-     *
-     * @param first first Json object
-     * @param second second Json object (its values have priority)
-     * @return new Json object containing merged keys
-     */
-    public static Json merge(Json first, Json second) {
-        return merge(new Json[]{first, second});
-    }
-
-    /**
      * Merges the contents of source into target.
      * Modifies the target object.
      *
@@ -87,18 +75,6 @@ public class JsonMerger {
                 target.put(key, new JsonValue(mergedNested));
             }
         }
-    }
-
-    /**
-     * Deeply merges Json objects.
-     * In case of nested JSON objects, they are also merged instead of overwritten.
-     *
-     * @param jsons Json objects to deeply merge
-     * @return new Json object containing deeply merged keys
-     */
-    public static Json deepMerge(Json... jsons) {
-        // By default, merge already performs a deep merge
-        return merge(jsons);
     }
 
     /**
