@@ -161,10 +161,12 @@ public class JsonParser {
         skipWhitespace();
 
         try {
+            MergeStrategy strategy = readMergeStrategy();
+
             char c = peek();
             if (c == '"') {
                 // Quoted key
-                return new JsonKey(parseStringLiteral());
+                return new JsonKey(parseStringLiteral(), strategy);
             } else if (Character.isLetterOrDigit(c) || c == '_' || c == '¤') { // Allow keys to start with underscore or '¤'
                 // Unquoted key
                 StringBuilder key = new StringBuilder();
@@ -176,13 +178,41 @@ public class JsonParser {
                         break;
                     }
                 }
-                return new JsonKey(key.toString());
+                return new JsonKey(key.toString(), strategy);
             } else {
-                throw new JsonParseException("Expected key", line, column);
+                throw new JsonParseException("Expected key start but get: '" + c + "'", line, column);
             }
         } catch (Exception ex) {
             throw new JsonParseException("Error while building key", line, column, ex);
         }
+    }
+
+    /**
+     * Reads key merge strategy. Default is {@link MergeStrategy#UNDEFINED}.
+     */
+    private MergeStrategy readMergeStrategy() {
+        char c = peek();
+        if (c == MergeStrategy.REPLACE.ch) {
+            consume();
+            return MergeStrategy.REPLACE;
+        } else if (c == MergeStrategy.OVERLAY.ch) {
+            consume();
+            if (peek() == MergeStrategy.OVERLAY_TRUNCATE.ch) {
+                consume();
+                return MergeStrategy.OVERLAY_TRUNCATE;
+            }
+            return MergeStrategy.OVERLAY;
+        } else if (c == MergeStrategy.PREPEND.ch) {
+            consume();
+            return MergeStrategy.PREPEND;
+        } else if (c == MergeStrategy.APPEND.ch) {
+            consume();
+            return MergeStrategy.APPEND;
+        } else if (c == MergeStrategy.DELETE.ch) {
+            consume();
+            return MergeStrategy.DELETE;
+        }
+        return MergeStrategy.UNDEFINED;
     }
 
     /**
@@ -320,6 +350,11 @@ public class JsonParser {
 
         skipWhitespace();
         char c = peek();
+
+        if (c == MergeStrategy.OVERLAY.ch) {
+            consume();
+            return new JsonValue(JsonValue.ValueType.OVERLAY);
+        }
 
         // Check if it looks like a KEY: value pattern
         if (c == '"' || Character.isLetterOrDigit(c) || c == '_' || c == '¤') {

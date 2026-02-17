@@ -6,7 +6,7 @@
 
     <groupId>com.songsofsyx.mod</groupId>
     <artifactId>songsofsyx-modapi-mod</artifactId>
-    <version>0.0.5</version>
+    <version>0.1.0</version>
 
     <name>Mod API</name>
     <description>The mod adds several functionalities to make modding easier.</description>
@@ -77,6 +77,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter-engine.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <version>${junit-jupiter-engine.version}</version>
             <scope>test</scope>
         </dependency>

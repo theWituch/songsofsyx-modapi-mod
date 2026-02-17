@@ -9,16 +9,29 @@ import java.util.Objects;
  */
 public class JsonKey {
     private final String key;
+    private final MergeStrategy mergeStrategy;
 
     public JsonKey(String key) {
+        this(key, MergeStrategy.UNDEFINED);
+    }
+
+    public JsonKey(String key, MergeStrategy mergeStrategy) {
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("Key cannot be empty");
         }
+        if (mergeStrategy == null) {
+            throw new IllegalArgumentException("MergeStrategy cannot be empty");
+        }
         this.key = key;
+        this.mergeStrategy = mergeStrategy;
     }
 
     public String getKey() {
         return key;
+    }
+
+    public MergeStrategy getMergeStrategy() {
+        return mergeStrategy;
     }
 
     @Override

@@ -16,7 +16,7 @@ public class JsonValue {
     private ValueType type;
 
     public enum ValueType {
-        STRING, INTEGER, DOUBLE, BOOLEAN, NULL, ARRAY, LIST, JSON_OBJECT
+        STRING, INTEGER, DOUBLE, BOOLEAN, NULL, ARRAY, LIST, JSON_OBJECT, OVERLAY
     }
 
     public JsonValue(Object value) {
@@ -44,6 +44,9 @@ public class JsonValue {
         } else if (value instanceof Json) {
             this.value = value;
             this.type = ValueType.JSON_OBJECT;
+        } else if (value  == ValueType.OVERLAY) {
+            this.value = null;
+            this.type = ValueType.OVERLAY;
         } else {
             throw new IllegalArgumentException("Unsupported value type: " + value.getClass().getName());
         }
@@ -124,6 +127,10 @@ public class JsonValue {
 
     public boolean isNull() {
         return type == ValueType.NULL;
+    }
+
+    public boolean isOverlay() {
+        return type == ValueType.OVERLAY;
     }
 
     @Override

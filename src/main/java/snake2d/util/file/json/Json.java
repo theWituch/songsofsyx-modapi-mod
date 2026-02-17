@@ -38,6 +38,23 @@ public class Json {
     }
 
     /**
+     * Removes key from JSON object.
+     */
+    public void remove(JsonKey key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        data.remove(key);
+    }
+
+    /**
+     * Removes key from JSON object.
+     */
+    public void remove(String key) {
+        remove(new JsonKey(key));
+    }
+
+    /**
      * Retrieves a value by key.
      */
     public JsonValue get(JsonKey key) {

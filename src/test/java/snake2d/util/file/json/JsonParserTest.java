@@ -212,7 +212,7 @@ public class JsonParserTest {
             Exception ex = assertThrows(JsonParseException.class, () -> {
                 parser.parse("{ -1 }");
             });
-            assertEquals("Expected key (line 1, column 3)", ex.getCause().getMessage());
+            assertEquals("Expected key start but get: '-' (line 1, column 3)", ex.getCause().getMessage());
         }
 
         @Test
@@ -820,6 +820,37 @@ public class JsonParserTest {
             JsonValue[] frames = TABLE_COMBO.get("FRAMES").asArray();
 
             assertEquals(5, frames.length);
+        }
+    }
+
+    @Nested
+    @DisplayName("JsonParser - Merge Strategy Tests")
+    class MergeStrategyTests {
+
+        @Test
+        @DisplayName("Should parse ")
+        void shouldParseKeysWithMergeStrategies() throws JsonParseException  {
+            String jsonString = """
+                {
+                    stg_undefined: "default UNDEFINED strategy",
+                    =stg_replace: "REPLACE strategy",
+                    >stg_append: [ 25, 64, 5 ],
+                    #stg_overlay: [ 26, #, 5 ],
+                    ##stg_overlay_truncate: [ 27, # ],
+                    !stg_delete: "Will delete key 'stg_delete'"
+                }
+            """;
+            Json json = parser.parse(jsonString);
+
+            JsonKey[] keys = new JsonKey[json.keySet().size()];
+            json.keySet().toArray(keys);
+
+            assertEquals(MergeStrategy.UNDEFINED, keys[0].getMergeStrategy());
+            assertEquals(MergeStrategy.REPLACE, keys[1].getMergeStrategy());
+            assertEquals(MergeStrategy.APPEND, keys[2].getMergeStrategy());
+            assertEquals(MergeStrategy.OVERLAY, keys[3].getMergeStrategy());
+            assertEquals(MergeStrategy.OVERLAY_TRUNCATE, keys[4].getMergeStrategy());
+            assertEquals(MergeStrategy.DELETE, keys[5].getMergeStrategy());
         }
     }
 

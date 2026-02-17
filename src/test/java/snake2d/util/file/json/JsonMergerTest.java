@@ -3,11 +3,15 @@ package snake2d.util.file.json;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import snake2d.util.file.json.exception.JsonParseException;
+import test.utils.TestFile;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static snake2d.util.file.json.JsonParserTest.assertThatJsonArrayValueKeyString;
 
 @DisplayName("JsonMerger Tests")
 public class JsonMergerTest {
@@ -106,6 +110,19 @@ public class JsonMergerTest {
             assertEquals("value1", result.get("key1").asString());
             assertEquals("value2", result.get("key2").asString());
         }
+
+        @Test
+        @DisplayName("Should merge two configurations with partially overlapping keys")
+        void shouldMergeTwoConfigurationsWithOverlappingKeys() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_simple.json"));
+            Json override = new JsonParser().parse(new TestFile("json/merger/test_simple_override.json"));
+
+            Json result = JsonMerger.merge(base, override);
+
+            assertEquals("Jan Kowalski", result.get("name").asString());
+            assertEquals(40, result.get("age").asInteger());
+            assertEquals("Warszawa", result.get("city").asString());
+        }
     }
 
     @Nested
@@ -173,6 +190,20 @@ public class JsonMergerTest {
             assertEquals(300, result.get("c").asInteger());
             assertEquals(400, result.get("d").asInteger());
         }
+
+        @Test
+        @DisplayName("Should merge multiple configurations with partially overlapping keys")
+        void shouldMergeMultipleConfigurationsWithOverlappingKeys() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_simple.json"));
+            Json override1 = new JsonParser().parse(new TestFile("json/merger/test_simple_override.json"));
+            Json override2 = new JsonParser().parse(new TestFile("json/merger/test_simple_override_2.json"));
+
+            Json result = JsonMerger.merge(base, override1, override2);
+
+            assertEquals("Jan Kowalski", result.get("name").asString());
+            assertEquals(50, result.get("age").asInteger());
+            assertEquals("Sosnowiec", result.get("city").asString());
+        }
     }
 
     @Nested
@@ -233,7 +264,7 @@ public class JsonMergerTest {
             Json nested2 = new Json();
             nested2.put("b", new JsonValue(20));
             nested2.put("c", new JsonValue(30));
-            json2.put("nested", new JsonValue(nested2));
+            json2.put(new JsonKey("nested", MergeStrategy.OVERLAY), new JsonValue(nested2));
 
             Json result = JsonMerger.merge(json1, json2);
 
@@ -505,6 +536,196 @@ public class JsonMergerTest {
             assertEquals("localhost", resultDb.get("host").asString());
             assertEquals(3306, resultDb.get("port").asInteger());
             assertEquals("admin", resultDb.get("user").asString());
+        }
+    }
+
+    @Nested
+    @DisplayName("Real Usage Scenarios Tests")
+    class RealUsageTests {
+
+        @Test
+        @DisplayName("Should merge configurations with default and overridden values")
+        void shouldMergeTwoJsonsWithoutOverrides() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_arrays_special_characters.json"));
+            Json addon = new JsonParser().parse(new TestFile("json/parser/test_arrays_structures.json"));
+
+            Json result = JsonMerger.merge(base, addon);
+
+            JsonValue[] first = result.get("_first").asArray();
+            assertEquals(5, first.length);
+            assertEquals(1, first[0].asInteger());
+            assertEquals(3, first[2].asInteger());
+
+            JsonValue[] second = result.get("_second_array").asArray();
+            assertEquals(3, second.length);
+            assertEquals("fo_o", second[0].asString());
+            assertEquals("ba.r", second[1].asString());
+            assertEquals("¤ value", second[2].asString());
+
+            JsonValue[] third = result.get("_some_third.array").asArray();
+            assertEquals(2, third.length);
+            assertEquals(true, third[0].asBoolean());
+            assertEquals(false, third[1].asBoolean());
+
+            assertEquals("¤specialvalue", result.get("¤special_key").asString());
+
+            JsonValue[] array = result.get("_array").asArray();
+            assertEquals(4, array.length);
+            assertThatJsonArrayValueKeyString(array[0]).isEqualTo("_a");
+            assertEquals(1, array[0].asInteger());
+            assertThatJsonArrayValueKeyString(array[1]).isEqualTo("_b");
+            assertEquals(2, array[1].asInteger());
+            assertThatJsonArrayValueKeyString(array[2]).isEqualTo("¤_c");
+            assertEquals(3, array[2].asInteger());
+            assertThatJsonArrayValueKeyString(array[3]).isEqualTo("c_¤");
+            assertEquals(4, array[3].asInteger());
+
+            JsonValue[] outer = result.get("_outer").asArray();
+            assertThatJsonArrayValueKeyString(outer[0]).isEqualTo("_inn.er_");
+            JsonValue[] inner = outer[0].asArray();
+            assertEquals(3, inner.length);
+            assertThatJsonArrayValueKeyString(inner[0]).isEqualTo("_a");
+            assertEquals(1, inner[0].asInteger());
+            assertThatJsonArrayValueKeyString(inner[1]).isEqualTo("_b_key");
+            assertEquals(2, inner[1].asInteger());
+            assertThatJsonArrayValueKeyString(inner[2]).isEqualTo("¤c");
+            assertEquals(3, inner[2].asInteger());
+
+            JsonValue[] ARRAY = result.get("ARRAY").asArray();
+            assertEquals(4, ARRAY.length);
+
+            assertThatJsonArrayValueKeyString(ARRAY[0]).isEqualTo("JSON");
+            Json JSON = ARRAY[0].asJson();
+            assertEquals("value", JSON.get("key").asString());
+            assertEquals("multi value", JSON.get("multi word key").asString());
+            Json miniJson = JSON.get("miniJson").asJson();
+            assertEquals(true, miniJson.get("mini").asBoolean());
+
+            assertThatJsonArrayValueKeyString(ARRAY[1]).isEqualTo("NAME");
+            String NAME = ARRAY[1].asString();
+            assertEquals("test", NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[2]).isEqualTo("SECOND NAME");
+            String SECOND_NAME = ARRAY[2].asString();
+            assertEquals("bond", SECOND_NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[3]).isEqualTo("AGE");
+            Integer AGE = ARRAY[3].asInteger();
+            assertEquals(123, AGE);
+        }
+
+        @Test
+        @DisplayName("Should merge configurations and override certain keys")
+        void shouldMergeTwoJsonsWithOverridesForCertainKeys2() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_arrays.json"));
+            Json override = new JsonParser().parse(new TestFile("json/merger/test_arrays_override.json"));
+
+            Json result = JsonMerger.merge(base, override);
+
+            List<JsonValue> items = result.get("items").asList();
+            assertEquals(5, items.size());
+            assertEquals(1, items.get(0).asInteger());
+            assertEquals(5, items.get(4).asInteger());
+
+            List<JsonValue> names = result.get("names").asList();
+            assertEquals(3, names.size());
+            assertEquals("Alice", names.get(0).asString());
+            assertEquals("Charlie", names.get(2).asString());
+
+            List<JsonValue> mixed = result.get("mixed").asList();
+            assertEquals(4, mixed.size());
+            assertEquals(1, mixed.get(0).asInteger());
+            assertEquals("text", mixed.get(1).asString());
+            assertTrue(mixed.get(2).asBoolean());
+            assertEquals(3.14, mixed.get(3).asDouble(), 0.001);
+
+            List<JsonValue> empty = result.get("empty").asList();
+            assertEquals(0, empty.size());
+        }
+
+        @Test
+        @DisplayName("Should merge configurations containing structures which overrides")
+        void shouldMergeTwoJsonsWithOverrides() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_arrays_structures.json"));
+            Json override = new JsonParser().parse(new TestFile("json/merger/test_arrays_structures_override.json"));
+
+            Json result = JsonMerger.merge(base, override);
+
+            JsonValue[] ARRAY = result.get("ARRAY").asArray();
+            assertEquals(4, ARRAY.length);
+
+            assertThatJsonArrayValueKeyString(ARRAY[0]).isEqualTo("JSON");
+            Json JSON = ARRAY[0].asJson();
+            assertEquals("new value", JSON.get("key").asString());
+            assertEquals("new multi value", JSON.get("multi word key").asString());
+            Json miniJson = JSON.get("miniJson").asJson();
+            assertEquals(false, miniJson.get("mini").asBoolean());
+
+            assertThatJsonArrayValueKeyString(ARRAY[1]).isEqualTo("NAME");
+            String NAME = ARRAY[1].asString();
+            assertEquals("new name", NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[2]).isEqualTo("SECOND NAME");
+            String SECOND_NAME = ARRAY[2].asString();
+            assertEquals("james", SECOND_NAME);
+
+            assertThatJsonArrayValueKeyString(ARRAY[3]).isEqualTo("AGE");
+            Integer AGE = ARRAY[3].asInteger();
+            assertEquals(321, AGE);
+        }
+
+        @Test
+        @DisplayName("Should merge configurations containing special characters which overrides")
+        void shouldMergeTwoJsonsWithSpecialCharacterWithOverrides() throws IOException, JsonParseException {
+            Json base = new JsonParser().parse(new TestFile("json/parser/test_arrays_special_characters.json"));
+            Json override = new JsonParser().parse(new TestFile("json/merger/test_arrays_special_characters_override.json"));
+
+            Json result = JsonMerger.merge(base, override);
+
+            JsonValue[] first = result.get("_first").asArray();
+            assertEquals(2, first.length);
+            assertEquals(1, first[0].asInteger());
+            assertEquals(2, first[1].asInteger());
+
+            JsonValue[] second = result.get("_second_array").asArray();
+            assertEquals(2, second.length);
+            assertEquals("fo_onew", second[0].asString());
+            assertEquals("ba.rrr", second[1].asString());
+
+            JsonValue[] third = result.get("_some_third.array").asArray();
+            assertEquals(2, third.length);
+            assertEquals(true, third[0].asBoolean());
+            assertEquals(false, third[1].asBoolean());
+
+            assertEquals("¤specialvalue", result.get("¤special_key").asString());
+
+            JsonValue[] array = result.get("_array").asArray();
+            assertEquals(5, array.length);
+            assertThatJsonArrayValueKeyString(array[0]).isEqualTo("_a");
+            assertEquals(1, array[0].asInteger());
+            assertThatJsonArrayValueKeyString(array[1]).isEqualTo("_b");
+            assertEquals(3, array[1].asInteger());
+            assertThatJsonArrayValueKeyString(array[2]).isEqualTo("¤_c");
+            assertEquals(3, array[2].asInteger());
+            assertThatJsonArrayValueKeyString(array[3]).isEqualTo("c_¤");
+            assertEquals(4, array[3].asInteger());
+            assertThatJsonArrayValueKeyString(array[4]).isEqualTo("d");
+            assertEquals(5, array[4].asInteger());
+
+            JsonValue[] outer = result.get("_outer").asArray();
+            assertEquals(1, outer.length);
+            assertThatJsonArrayValueKeyString(outer[0]).isEqualTo("_inn.er2_");
+            JsonValue[] inner2 = outer[0].asArray();
+            assertEquals(2, inner2.length);
+            assertThatJsonArrayValueKeyString(inner2[0]).isEqualTo("_a");
+            assertEquals(3, inner2[0].asInteger());
+            assertThatJsonArrayValueKeyString(inner2[1]).isEqualTo("¤c");
+            assertEquals(6, inner2[1].asInteger());
+
+            JsonValue[] newArray = result.get("new array").asArray();
+            assertEquals(2, newArray.length);
+            assertEquals(1, newArray[0].asInteger());
+            assertEquals(2, newArray[1].asInteger());
         }
     }
 }

@@ -1,0 +1,5 @@
+{
+  ** Override age to 50
+  age: 50,
+  city: "Sosnowiec" ** At age 50 he arrived here
+}

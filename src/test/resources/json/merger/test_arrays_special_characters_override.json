@@ -1,0 +1,20 @@
+{
+  ** ¤¤ Arrays with special characters in keys, values, and comments ¤¤
+  _first: [ 1, 2 ], ** overrided to 2 elements
+  _second_array: [ "fo_onew", "ba.rrr" ], ** changed to 2 values ,
+  "new array": [ 1, 2 ],
+  _array: [ ** ¤ array ¤
+    _a: 1,
+    _b: 3, ** changed value
+    ¤_c: 3,
+    c_¤: 4,
+    d: 5 ** added fifth element
+  ],
+  ** ¤¤ Nested arrays works too ¤¤
+  _outer: [
+    _inn.er2_: [
+      _a: 3,
+      ¤c: 6
+    ]
+  ]
+}

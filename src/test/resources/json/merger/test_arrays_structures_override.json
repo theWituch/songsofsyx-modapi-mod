@@ -1,0 +1,15 @@
+{
+  ** Override changes all values
+  ARRAY: [
+    JSON: {
+      key: "new value",
+      "multi word key": "new multi value",
+      miniJson: {
+        mini: false
+      }
+    },
+    NAME: "new name",
+    "SECOND NAME": "james",
+    AGE: 321
+  ],
+}
