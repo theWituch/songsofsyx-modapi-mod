@@ -268,23 +268,23 @@ public class JsonParser {
     /**
      * Parses an array.
      */
-    private List<JsonValue> parseArray() throws JsonParseException {
+    private JsonValue[] parseArray() throws JsonParseException {
         if (peek() != '[') {
             throw new JsonParseException("Expected '['", line, column);
         }
         consume(); // Consume '['
 
-        List<JsonValue> array = new ArrayList<>();
+        List<JsonValue> arrayList = new ArrayList<>();
         skipWhitespace();
 
         if (peek() == ']') {
             consume();
-            return array; // Empty array
+            return new JsonValue[0]; // Empty array
         }
 
         while (position < content.length()) {
             skipWhitespace();
-            array.add(parseArrayElement());
+            arrayList.add(parseArrayElement());
             skipWhitespace();
 
             char c = peek();
@@ -294,11 +294,11 @@ public class JsonParser {
                 // Check if ']' immediately follows the comma
                 if (peek() == ']') {
                     consume();
-                    return array;
+                    return arrayList.toArray(new JsonValue[0]);
                 }
             } else if (c == ']') {
                 consume();
-                return array;
+                return arrayList.toArray(new JsonValue[0]);
             } else if (c == '}') {
                 throw new JsonParseException("Expected closing ']' before '}'", line, column);
             } else {

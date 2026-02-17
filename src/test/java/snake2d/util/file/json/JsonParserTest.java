@@ -2,6 +2,7 @@ package snake2d.util.file.json;
 
 import org.assertj.core.api.AbstractObjectAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -806,6 +807,19 @@ public class JsonParserTest {
 
             Json RoomEmploymentIns = json.get("settlement.room.main.employment.RoomEmploymentIns").asJson();
             assertEquals("Industry workers can fetch the input for the industry without problems if the distance is short. If long, then productivity will suffer.", RoomEmploymentIns.get("¤¤ProximityInputD").asString());
+        }
+
+        @Disabled
+        @Test
+        @DisplayName("Should parse _ASYLUM.txt")
+        void shouldParseGameAssetsFile4() throws IOException, JsonParseException {
+            Json json = parser.parse(new TestFile("json/gameassets/_ASYLUM.txt"));
+
+            Json SPRITES = json.get("SPRITES").asJson();
+            Json TABLE_COMBO = SPRITES.get("TABLE_COMBO").asJson();
+            JsonValue[] frames = TABLE_COMBO.get("FRAMES").asArray();
+
+            assertEquals(5, frames.length);
         }
     }
 

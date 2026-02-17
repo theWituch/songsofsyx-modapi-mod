@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Vanilla Json Performance Tests")
-public class JsonPerformanceTest {
+public class VanillaJsonPerformanceTest {
 
     @TempDir
     static Path tempDir;
